@@ -33,6 +33,36 @@ Install system OCR/PDF tools before running ingestion:
 
 On Windows, install 64-bit builds of Tesseract and Poppler and add their `bin` directories to `PATH`.
 
+## Downloading the Embedding Model
+
+The ingestion pipeline does not download models at runtime. Download `intfloat/e5-large-v2` once while you have network access, then run ingestion offline.
+
+To download the model into the default Hugging Face cache:
+
+```bash
+python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('intfloat/e5-large-v2')"
+```
+
+After the model is cached, the default ingestion command can load it offline:
+
+```bash
+python ingest.py --paths ./data
+```
+
+To keep the model in a project-local folder instead, download it with the Hugging Face CLI:
+
+```bash
+huggingface-cli download intfloat/e5-large-v2 --local-dir ./models/intfloat-e5-large-v2
+```
+
+Then point ingestion at that folder:
+
+```bash
+python ingest.py --paths ./data --embedding-model ./models/intfloat-e5-large-v2
+```
+
+If the model is not available locally, startup fails with an offline model error. Re-run one of the download commands above on a machine with network access, or copy the downloaded model folder/cache into place.
+
 ## Usage
 
 Run a new ingestion job:
