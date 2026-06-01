@@ -65,6 +65,39 @@ The CLI prints live progress in this format:
 queued=12 processed=3 skipped=0 errors=0 status=Stored 4 chunks for sample.pdf
 ```
 
+## Embedding Plots
+
+Generate interactive PCA and t-SNE charts from the vectors already stored in ChromaDB:
+
+```bash
+python plot_embeddings.py --chroma-path ./chroma_db
+```
+
+This writes:
+
+- `embedding_plots/pca_embedding_plot.html`
+- `embedding_plots/tsne_embedding_plot.html`
+
+Color points by another metadata field:
+
+```bash
+python plot_embeddings.py --color-by page
+```
+
+Generate only one chart:
+
+```bash
+python plot_embeddings.py --methods pca
+```
+
+For large collections, sample a deterministic subset before plotting:
+
+```bash
+python plot_embeddings.py --max-points 2000
+```
+
+Each point represents one stored chunk. Hover shows the source file, page, chunk index, file type, and a text preview.
+
 ## Persistence
 
 - Vector store: `./chroma_db`
