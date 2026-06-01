@@ -40,8 +40,7 @@ chroma_db/
 # Large model files
 models/
 
-# Data directories
-data/
+
 
 # IDE
 .vscode/
