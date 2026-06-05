@@ -38,6 +38,7 @@ def build_scan_drive_node(collection: Collection):
         scanned_roots = bool(state.get("scanned_roots"))
         indexed_files = list(state.get("indexed_files") or [])
         skipped_files = list(state.get("skipped_files") or [])
+        force_reindex = bool(state.get("force_reindex", False))
 
         if not scanned_roots:
             roots = [Path(path).expanduser().resolve() for path in state.get("root_paths", [])]
@@ -57,7 +58,7 @@ def build_scan_drive_node(collection: Collection):
                         continue
                     file_path = str(path.resolve())
                     last_modified = os.path.getmtime(file_path)
-                    if _already_indexed(collection, file_path, last_modified):
+                    if not force_reindex and _already_indexed(collection, file_path, last_modified):
                         indexed_files.append(file_path)
                         continue
                     discovered.append(file_path)
@@ -91,4 +92,3 @@ def build_scan_drive_node(collection: Collection):
         }
 
     return scan_drive
-

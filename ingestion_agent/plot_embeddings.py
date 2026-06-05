@@ -80,6 +80,14 @@ def _sample_rows(rows: list[dict[str, Any]], max_points: int | None) -> list[dic
     return [rows[index] for index in indices]
 
 
+def _truncate_label(name: str, max_chars: int = 40) -> str:
+    """Shorten a long filename to fit in the plot legend."""
+    stem = Path(name).stem
+    if len(stem) <= max_chars:
+        return stem
+    return stem[: max_chars - 1] + "…"
+
+
 def _make_dataframe(rows: list[dict[str, Any]], coordinates: np.ndarray) -> pd.DataFrame:
     """Build the plotting dataframe from Chroma rows and 2D coordinates."""
     records: list[dict[str, Any]] = []
@@ -92,6 +100,7 @@ def _make_dataframe(rows: list[dict[str, Any]], coordinates: np.ndarray) -> pd.D
                 "id": row["id"],
                 "source": row["source"],
                 "source_name": row["source_name"],
+                "source_label": _truncate_label(row["source_name"]),
                 "page": row["page"],
                 "chunk_index": row["chunk_index"],
                 "file_type": row["file_type"],
@@ -116,7 +125,11 @@ def _pca_coordinates(embeddings: np.ndarray) -> np.ndarray:
     return PCA(n_components=2, random_state=42).fit_transform(embeddings)
 
 
-def _tsne_coordinates(embeddings: np.ndarray, perplexity: float | None) -> np.ndarray:
+def _tsne_coordinates(
+    embeddings: np.ndarray,
+    perplexity: float | None,
+    metric: str,
+) -> tuple[np.ndarray, float]:
     """Project embeddings to two dimensions with t-SNE."""
     sample_count = embeddings.shape[0]
     if sample_count < 3:
@@ -124,17 +137,19 @@ def _tsne_coordinates(embeddings: np.ndarray, perplexity: float | None) -> np.nd
 
     effective_perplexity = perplexity
     if effective_perplexity is None:
-        effective_perplexity = min(30.0, max(2.0, float((sample_count - 1) // 3)))
+        effective_perplexity = min(15.0, max(5.0, float(np.sqrt(sample_count))))
     if effective_perplexity >= sample_count:
         effective_perplexity = max(1.0, float(sample_count - 1))
 
-    return TSNE(
+    coordinates = TSNE(
         n_components=2,
         perplexity=effective_perplexity,
         init="pca",
         learning_rate="auto",
+        metric=metric,
         random_state=42,
     ).fit_transform(embeddings)
+    return coordinates, effective_perplexity
 
 
 def _write_plot(
@@ -145,14 +160,18 @@ def _write_plot(
     color_by: str,
 ) -> None:
     """Write an interactive Plotly scatter chart to an HTML file."""
+    # Use truncated labels for source_name so legend entries fit; full name stays in hover.
+    plot_color_by = "source_label" if color_by == "source_name" else color_by
     fig = px.scatter(
         dataframe,
         x="x",
         y="y",
-        color=color_by,
+        color=plot_color_by,
         symbol="file_type" if "file_type" in dataframe else None,
         hover_data={
-            "source": True,
+            "source_name": True,
+            "source_label": False,
+            "source": False,
             "page": True,
             "chunk_index": True,
             "file_type": True,
@@ -167,7 +186,15 @@ def _write_plot(
     fig.update_traces(marker={"size": 8, "opacity": 0.78})
     fig.update_layout(
         legend_title_text=color_by,
-        margin={"l": 40, "r": 40, "t": 70, "b": 40},
+        legend={
+            "font": {"size": 10},
+            "itemsizing": "constant",
+            "yanchor": "top",
+            "y": 1.0,
+            "xanchor": "left",
+            "x": 1.01,
+        },
+        margin={"l": 40, "r": 220, "t": 70, "b": 40},
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.write_html(output_path, include_plotlyjs=True, full_html=True)
@@ -183,6 +210,7 @@ def generate_embedding_plots(
     max_points: int | None = None,
     batch_size: int = 1000,
     perplexity: float | None = None,
+    tsne_metric: str = "cosine",
 ) -> list[Path]:
     """Generate requested PCA and t-SNE embedding plots from the Chroma collection."""
     _require_plot_dependencies()
@@ -200,10 +228,21 @@ def generate_embedding_plots(
         normalized_method = method.lower()
         if normalized_method == "pca":
             coordinates = _pca_coordinates(embeddings)
-            title = "Knowledge Catalyst Embeddings - PCA"
+            explained = PCA(n_components=2, random_state=42).fit(embeddings).explained_variance_ratio_
+            title = (
+                "Knowledge Catalyst Embeddings - PCA "
+                f"(variance explained: {explained[0]:.1%}, {explained[1]:.1%})"
+            )
         elif normalized_method == "tsne":
-            coordinates = _tsne_coordinates(embeddings, perplexity)
-            title = "Knowledge Catalyst Embeddings - t-SNE"
+            coordinates, effective_perplexity = _tsne_coordinates(
+                embeddings,
+                perplexity,
+                tsne_metric,
+            )
+            title = (
+                "Knowledge Catalyst Embeddings - t-SNE "
+                f"(metric={tsne_metric}, perplexity={effective_perplexity:g})"
+            )
         else:
             raise ValueError(f"Unsupported plot method: {method}")
 
@@ -269,6 +308,12 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Optional t-SNE perplexity. Must be less than the number of points.",
     )
+    parser.add_argument(
+        "--tsne-metric",
+        choices=["cosine", "euclidean"],
+        default="cosine",
+        help="Distance metric for t-SNE. Cosine is the default for normalized E5 embeddings.",
+    )
     return parser.parse_args()
 
 
@@ -285,6 +330,7 @@ def main() -> None:
             max_points=args.max_points,
             batch_size=args.batch_size,
             perplexity=args.perplexity,
+            tsne_metric=args.tsne_metric,
         )
     except RuntimeError as exc:
         print(f"Plotting failed: {exc}", file=sys.stderr)

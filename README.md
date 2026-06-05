@@ -89,6 +89,24 @@ Optional paths:
 python ingest.py --paths ./data --chroma-path ./chroma_db --log-db ingestion_log.db --checkpoint-db ingestion_checkpoints.sqlite
 ```
 
+Rebuild existing files with the cleaner chunking defaults:
+
+```bash
+python ingest.py --paths ./data --embedding-model models/e5-large-v2 --force-reindex
+```
+
+Tune chunking if the embedding plots are too crowded:
+
+```bash
+python ingest.py --paths ./data --embedding-model models/e5-large-v2 --force-reindex --chunk-size 220 --chunk-overlap 30 --min-chunk-size 40
+```
+
+By default, ingestion skips references and bibliography sections because they usually add noise to embedding clusters. Keep them when needed:
+
+```bash
+python ingest.py --paths ./data --embedding-model models/e5-large-v2 --include-reference-chunks
+```
+
 The CLI prints live progress in this format:
 
 ```text
@@ -120,13 +138,19 @@ Generate only one chart:
 python plot_embeddings.py --methods pca
 ```
 
+Tune t-SNE when clusters are too compressed or too spread out:
+
+```bash
+python plot_embeddings.py --methods tsne --perplexity 10 --tsne-metric cosine
+```
+
 For large collections, sample a deterministic subset before plotting:
 
 ```bash
 python plot_embeddings.py --max-points 2000
 ```
 
-Each point represents one stored chunk. Hover shows the source file, page, chunk index, file type, and a text preview.
+Each point represents one stored chunk. Hover shows the source file, page, chunk index, file type, and a text preview. PCA is a linear projection, so overlap is expected when the first two principal components explain only a small part of the embedding variance. t-SNE uses cosine distance by default because the E5 embeddings are normalized.
 
 ## Persistence
 
@@ -135,6 +159,19 @@ Each point represents one stored chunk. Hover shows the source file, page, chunk
 - Structured ingestion logs: `ingestion_log.db`
 
 The pipeline is idempotent. Files already present in ChromaDB with the same absolute path and last modified timestamp are skipped. Modified files are reindexed with deterministic chunk IDs after old chunks for that source are deleted.
+
+## Chunking
+
+The default chunker is section-aware and uses smaller chunks for cleaner embedding clusters:
+
+- chunk size: `256` approximate whitespace tokens
+- overlap: `32` approximate whitespace tokens
+- minimum chunk size: `40` approximate whitespace tokens unless a file only has shorter chunks
+- repeated short headers and footers are removed across pages
+- page number/footer lines are removed
+- reference/bibliography sections are skipped unless `--include-reference-chunks` is passed
+
+Run with `--force-reindex` after changing chunk settings so unchanged files are rebuilt in ChromaDB.
 
 ## E5 Prefixes
 

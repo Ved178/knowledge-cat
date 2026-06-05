@@ -11,7 +11,12 @@ from typing import Any
 from langgraph.checkpoint.sqlite import SqliteSaver
 
 from ingestion_agent.agent import build_graph, initial_state
-from ingestion_agent.constants import DEFAULT_CHECKPOINT_DB_PATH
+from ingestion_agent.constants import (
+    CHUNK_OVERLAP_TOKENS,
+    CHUNK_SIZE_TOKENS,
+    DEFAULT_CHECKPOINT_DB_PATH,
+    MIN_CHUNK_TOKENS,
+)
 
 
 def _progress_line(state: dict[str, Any]) -> str:
@@ -69,6 +74,34 @@ def parse_args() -> argparse.Namespace:
             "The model is loaded offline only."
         ),
     )
+    parser.add_argument(
+        "--force-reindex",
+        action="store_true",
+        help="Reprocess matching files even when Chroma already has the same mtime.",
+    )
+    parser.add_argument(
+        "--chunk-size",
+        type=int,
+        default=CHUNK_SIZE_TOKENS,
+        help="Approximate chunk size in whitespace tokens.",
+    )
+    parser.add_argument(
+        "--chunk-overlap",
+        type=int,
+        default=CHUNK_OVERLAP_TOKENS,
+        help="Approximate overlap in whitespace tokens.",
+    )
+    parser.add_argument(
+        "--min-chunk-size",
+        type=int,
+        default=MIN_CHUNK_TOKENS,
+        help="Drop chunks below this approximate token count unless they are the only chunks.",
+    )
+    parser.add_argument(
+        "--include-reference-chunks",
+        action="store_true",
+        help="Keep references and bibliography sections instead of skipping them.",
+    )
     return parser.parse_args()
 
 
@@ -97,9 +130,24 @@ def main() -> None:
 
     saved = graph.get_state(config) if args.resume else None
     if args.resume and saved and saved.values:
-        run_state = {**saved.values, "root_paths": root_paths}
+        run_state = {
+            **saved.values,
+            "root_paths": root_paths,
+            "force_reindex": args.force_reindex,
+            "chunk_size_tokens": args.chunk_size,
+            "chunk_overlap_tokens": args.chunk_overlap,
+            "min_chunk_tokens": args.min_chunk_size,
+            "skip_reference_chunks": not args.include_reference_chunks,
+        }
     else:
-        run_state = initial_state(root_paths)
+        run_state = initial_state(
+            root_paths,
+            force_reindex=args.force_reindex,
+            chunk_size_tokens=args.chunk_size,
+            chunk_overlap_tokens=args.chunk_overlap,
+            min_chunk_tokens=args.min_chunk_size,
+            skip_reference_chunks=not args.include_reference_chunks,
+        )
 
     last_line = ""
     try:

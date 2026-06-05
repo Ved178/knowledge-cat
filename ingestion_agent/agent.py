@@ -7,7 +7,14 @@ from typing import Any, TypedDict
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
-from ingestion_agent.constants import DEFAULT_CHROMA_PATH, DEFAULT_COLLECTION_NAME, DEFAULT_LOG_DB_PATH
+from ingestion_agent.constants import (
+    CHUNK_OVERLAP_TOKENS,
+    CHUNK_SIZE_TOKENS,
+    DEFAULT_CHROMA_PATH,
+    DEFAULT_COLLECTION_NAME,
+    DEFAULT_LOG_DB_PATH,
+    MIN_CHUNK_TOKENS,
+)
 from ingestion_agent.db.chroma_client import get_chroma_collection
 from ingestion_agent.models.embedder import get_embedding_model
 from ingestion_agent.nodes.chunk import chunk_text
@@ -43,6 +50,11 @@ class IngestionState(TypedDict, total=False):
     scanned_roots: bool
     skip_reason: str
     last_error: str
+    force_reindex: bool
+    chunk_size_tokens: int
+    chunk_overlap_tokens: int
+    min_chunk_tokens: int
+    skip_reference_chunks: bool
 
 
 def update_status(state: IngestionState) -> IngestionState:
@@ -123,7 +135,15 @@ def build_graph(
     return graph.compile(checkpointer=checkpointer)
 
 
-def initial_state(root_paths: list[str]) -> IngestionState:
+def initial_state(
+    root_paths: list[str],
+    *,
+    force_reindex: bool = False,
+    chunk_size_tokens: int = CHUNK_SIZE_TOKENS,
+    chunk_overlap_tokens: int = CHUNK_OVERLAP_TOKENS,
+    min_chunk_tokens: int = MIN_CHUNK_TOKENS,
+    skip_reference_chunks: bool = True,
+) -> IngestionState:
     """Create a clean initial graph state for a new ingestion run."""
     return {
         "root_paths": root_paths,
@@ -141,4 +161,9 @@ def initial_state(root_paths: list[str]) -> IngestionState:
         "scanned_roots": False,
         "skip_reason": "",
         "last_error": "",
+        "force_reindex": force_reindex,
+        "chunk_size_tokens": chunk_size_tokens,
+        "chunk_overlap_tokens": chunk_overlap_tokens,
+        "min_chunk_tokens": min_chunk_tokens,
+        "skip_reference_chunks": skip_reference_chunks,
     }

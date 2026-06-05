@@ -80,3 +80,5 @@ htmlcov/
 
 # Misc
 .vscode-server/
+
+CLAUDE.md
