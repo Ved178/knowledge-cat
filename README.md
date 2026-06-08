@@ -1,12 +1,24 @@
-# Knowledge Catalyst Ingestion Layer
+# Knowledge Catalyst
 
-This package implements Layer 1 of the local Knowledge Catalyst pipeline:
+A local knowledge base pipeline with semantic search. Layer 1 ingests files into a vector store; Layer 2 lets you query them from an interactive REPL powered by LM Studio.
+
+## Architecture
+
+**Layer 1 — Ingestion**
 
 ```text
-scan_drive -> classify_file -> extract_text -> chunk_text -> embed_chunks -> store_to_chroma -> update_status
+scan_drive → classify_file → extract_text → chunk_text → embed_chunks → store_to_chroma → update_status
 ```
 
-It crawls supported local files, extracts text, chunks it with the E5 passage prefix, embeds chunks with `intfloat/e5-large-v2`, and stores the vectors in a persistent local ChromaDB collection named `knowledge_catalyst`.
+Crawls supported local files, extracts text, chunks it with the E5 passage prefix, embeds chunks with `intfloat/e5-large-v2`, and stores vectors in a persistent ChromaDB collection named `knowledge_catalyst`.
+
+**Layer 2 — Query**
+
+```text
+reformulate_query → retrieve → rank_documents → summarize
+```
+
+Interactive REPL that embeds your query, retrieves the top-k most relevant chunks from ChromaDB, ranks results by source file, and generates a 2-3 sentence summary with inline citations via LM Studio. Falls back to plain semantic search when LM Studio is unavailable.
 
 ## Supported Files
 
@@ -152,6 +164,44 @@ python plot_embeddings.py --max-points 2000
 
 Each point represents one stored chunk. Hover shows the source file, page, chunk index, file type, and a text preview. PCA is a linear projection, so overlap is expected when the first two principal components explain only a small part of the embedding variance. t-SNE uses cosine distance by default because the E5 embeddings are normalized.
 
+## Query Layer (Layer 2)
+
+Start the interactive REPL after ingestion is complete:
+
+```bash
+python query.py --embedding-model models/e5-large-v2
+```
+
+The REPL auto-detects LM Studio and selects the best available chat model. With LM Studio running you get query reformulation and a synthesized summary; without it you get plain ranked semantic search.
+
+```text
+Loading query layer... ready  (LM Studio: mistralai/devstral-small-2-2512)
+Type a query, or "quit" to exit.
+
+> how do simulations detect convergence
+  search: convergence detection in simulations monitoring system disturbances power flow
+
+Simulations detect convergence by monitoring system disturbances... [Nguyen_et_al.pdf p.6]
+
+  1. Nguyen_et_al.pdf  (84%)
+     p.6 — "…"
+  2. Performance_Evaluation.pdf  (83%)
+     p.10 — "…"
+```
+
+Options:
+
+```bash
+python query.py --embedding-model models/e5-large-v2 --top-k 10
+python query.py --embedding-model models/e5-large-v2 --lm-studio-url http://localhost:1234/v1
+python query.py --embedding-model models/e5-large-v2 --lm-studio-model "mistralai/devstral-small-2-2512"
+python query.py --chroma-path ./chroma_db --collection knowledge_catalyst
+```
+
+LM Studio notes:
+- Embedding models in LM Studio are ignored automatically.
+- Thinking/reasoning models (Qwen3, DeepSeek-R1, QwQ) are deprioritized in favour of faster chat models; if one is selected anyway a wall-clock timeout prevents the REPL from hanging.
+
 ## Persistence
 
 - Vector store: `./chroma_db`
@@ -177,6 +227,6 @@ Run with `--force-reindex` after changing chunk settings so unchanged files are 
 
 The codebase defines both E5 prefixes in `ingestion_agent/constants.py`:
 
-- `PASSAGE_PREFIX = "passage: "` for stored document chunks
-- `QUERY_PREFIX = "query: "` for query-time embeddings in downstream layers
+- `PASSAGE_PREFIX = "passage: "` prepended to every stored chunk at ingestion time
+- `QUERY_PREFIX = "query: "` prepended to every user query at search time (used by `encode_query()` in the query layer)
 # knowledge-cat
