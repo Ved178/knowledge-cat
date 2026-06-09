@@ -1,5 +1,47 @@
 [
   {
+    "query": "drone",
+    "time": "2026-06-09 09:46",
+    "results": 3,
+    "summary": "Drones, also referred to as unmanned aerial vehicles (UAVs), are being actively researched for various applications [id717_vf p.1]. Research explores their design, control technologies, and reconfigurability [PathPlanningforAutonomousDrones.pdf p.15; UAV swarms research challenges and future directions.pdf p.4]. Furthermore, studies address the challenges associated with their visual line of sight operations [id717_vf p.1].",
+    "reformulated": "unmanned aerial vehicles",
+    "ranked_documents": [
+      {
+        "id": "/Users/ved/Documents/repos/modelicon-knowledgecat/data/PathPlanningforAutonomousDrones.pdf::chunk_17",
+        "document": "passage: 16. Okulski,M.;\u0141awryn\u00b4czuk,M.ASmallUAVOptimizedforEfficientLong-RangeandVTOLMissions:AnExperimentalTandem- WingQuadplaneDrone.Appl.Sci.2022,12,7059.[CrossRef] 17. Derrouaoui,S.H.;Bouzid,Y.;Guiatni,M.;Dib,I.AComprehensiveReviewonReconfigurableDrones:Classification,Characteris- tics,DesignandControlTechnologies.UnmannedSyst.2022,10,3\u201329.[CrossRef] 18. Valenti,F.;Giaquinto,D.;Musto,L.;Zinelli,A.;Bertozzi,M.;Broggi,A.EnablingComputerVision-BasedAutonomousNavigation forUnmannedAerialVehicles inClutteredGPS-DeniedEnvironments. In ProceedingsoftheInternationalConferenceon IntelligentTransportationSystems,Maui,HI,USA,4\u20137November2018;pp.3886\u20133891. 19. Abeywickrama,H.V.;Jayawickrama,B.A.;He,Y.;Dutkiewicz,E.ComprehensiveEnergyConsumptionModelforUnmanned AerialVehicles,BasedonEmpiricalStudiesofBatteryPerformance.IEEEAccess2018,6,58383\u201358394.[CrossRef] 20. Morbidi,F.;Cano,R.;Lara,D.Minimum-energypathgenerationforaquadrotorUAV.InProceedingsoftheIEEEInternational ConferenceonRoboticsandAutomation,Stockholm,Sweden,16\u201321May2016;pp.1492\u20131498. 21. Abdilla,A.; Richards,A.; Burrow,S.Powerandendurancemodellingofbattery-poweredrotorcraft. InProceedingsofthe IEEE/RSJInternationalConferenceonIntelligentRobotsandSystems,Hamburg,Germany,28September\u20133October2015;pp. 675\u2013680. 22. Ahmed,F.;Jenihhin,M.A.SurveyonUAVComputingPlatforms:AHardwareReliabilityPerspective. Sensors2022,22,6286. [CrossRef][PubMed] 23. OyukiRojas-Perez,L.;Martinez-Carranza,J.On-boardprocessingforautonomousdroneracing:Anoverview.Integration2021, 80,46\u201359.[CrossRef] 24. Roseman,C.A.;Argrow,B.M.WeatherhazardriskquantificationforsUASsafetyriskmanagement.J.Atmos.OceanicTech.2020, 37,1251.[CrossRef] 25. Gianfelice, M.; Aboshosha, H.Real-timeWindPredictoinsforSafeDroneFlightsinToronto. ResultsEng. 2022, 15, 100534. [CrossRef] 26. Hu,S.;Mayer,G.ThreeDimensionalEulerSolutionsforDroneDeliveryTrajectoryPredictionunderExtremeEnvironments.In ProceedingsoftheInternationalConferenceonAppliedMathematics,Modelling,andIntelligentComputing,Kunming,China, 25\u201327March2022;pp.1\u20136. 27. Jayaweera,H.M.P.C.;Hanoun,S.PathPlanningofUnmannedAerialVehicles(UAVs)inWindyEnvironments.Drones2022,6, 101.[CrossRef] 28. Lin,H.Y.;Peng,X.Z.AutonomousQuadrotorNavigationWithVisionBasedObstacleAvoidanceandPathPlanning.IEEEAccess 2021,9,102450\u2013102459.[CrossRef] 29. Cheng,C.; Sha,Q.; He,B.; Li,G.PathplanningandobstacleavoidanceforAUV:Areview. Ocean. Eng. 2021,235,109355. [CrossRef] 30. Singh,J.;Dhuheir,M.;Refaey,A.;Erbad,A.;Mohamed,A.;Guizani,M.NavigationandObstacleAvoidanceSysteminUnknown Environment.InProceedingsoftheIEEECanadianConferenceonElectricalandComputerEngineering,London,ON,Canada, 30August\u20132September2020;pp.1\u20134. 31. Yijing,Z.;Zheng,Z.;Xiaoyi,Z.;Yang,L.QlearningalgorithmbasedUAVpathlearningandobstacleavoidenceapproach.In ProceedingsoftheChineseControlConference,Dalian,China,26\u201328July2017;pp.3397\u20133402. 32. Yan,C.;Xiang,X.APathPlanningAlgorithmforUAVBasedonImprovedQ-Learning. InProceedingsoftheInternational ConferenceonRoboticsandAutomationSciences,Wuhan,China,23\u201325June2018;pp.1\u20135. 33. Hou,X.;Liu,F.;Wang,R.;Yu,Y.AUAVDynamicPathPlanningAlgorithm. InProceedingsoftheYouthAcademicAnnual ConferenceofChineseAssociationofAutomation,Zhanjiang,China,16\u201318October2020;pp.127\u2013131. 34. Doukhi,O.;Lee,D.J.DeepReinforcementLearningforAutonomousMap-LessNavigationofaFlyingRobot.IEEEAccess2022, 10,82964\u201382976.[CrossRef] 35. Wu,Y.;Low,K.H.AnAdaptivePathReplanningMethodforCoordinatedOperationsofDroneinDynamicUrbanEnvironments. IEEESyst.J.2021,15,4600\u20134611.[CrossRef] 36. Canny, J.; Reif, J. New lower bound techniques for robot motion planning problems. In Proceedings of the 28th Annual SymposiumonFoundationsofComputerScience,LosAngeles,CA,USA,12\u201314October1987;pp.49\u201360. 37. Zhang,X.Y.;Duan,H.B.Animprovedconstraineddifferentialevolutionalgorithmforunmannedaerialvehicleglobalroute planning.Appl.SoftComput.2015,26,270\u2013284.[CrossRef] 38. Chen,Y.;Luo,G.;Mei,Y.;Yu,J.;Su,X.UAVPathPlanningUsingArtificialPotentialFieldMethodUpdatedbyOptimalControl Theory.Int.J.Syst.Sci.2014,47,1407\u20131420.[CrossRef] 39. Kim,H.;Jeong,J.;Kim,N.;Kang,B.AStudyon3DOptimalPathPlanningforQuadcopterUAVBasedonD*Lite.InProceedings oftheInternationalConferenceonUnmannedAircraftSystems,Atlanta,GA,USA,11\u201314June2019;pp.787\u2013793. 40. Lv,Z.;Yang,L.;He,Y.;Liu,Z.;Han,Z.3DenvironmentmodelingwithheightdimensionreductionandpathplanningforUAV. InProceedingsoftheInternationalConferenceonModelling,IdentificationandControl,Kunming,China,10\u201312July2017;pp. 734\u2013739. 41. Song,X.; Hu,S.2Dpathplanningwithdubins-path-basedA\u2217algorithmforafixed-wingUAV.InProceedingsoftheIEEE InternationalConferenceonControlScienceandSystemsEngineering,Beijing,China,17\u201319August2017;pp.69\u201373. 42. Souissi,O.;Benatitallah,R.;Duvivier,D.;Artiba,A.;Belanger,N.;Feyzeau,P.Pathplanning:A2013survey.InProceedingsofthe InternationalConferenceonIndustrialEngineeringandSystemsManagement,Rabat,Morocco,28\u201330October2013;pp.1\u20138.",
+        "source": "/Users/ved/Documents/repos/modelicon-knowledgecat/data/PathPlanningforAutonomousDrones.pdf",
+        "source_name": "PathPlanningforAutonomousDrones.pdf",
+        "page": 15,
+        "chunk_index": 17,
+        "file_type": "text_pdf",
+        "distance": 0.3000156283378601,
+        "score": 0.84999218583107
+      },
+      {
+        "id": "/Users/ved/Documents/repos/modelicon-knowledgecat/data/UAV swarms research challenges and future directions.pdf::chunk_4",
+        "document": "passage: Fig. 1 Basic components of UAV swarms control can be achieved through a ground station or a cloud-based system, providing a cen- tral interface for control, monitoring, and data reception. A robust communication system is essential for the real-time exchange of information among UAVs and with the ground control station. This system typically employs wire- less protocols such as Wi-Fi, Bluetooth, or Zigbee. Integrated sensors, including cameras, LiDAR, GPS, accelerometers, and gyroscopes, enable the drones to gather and process environmental data. Algorithms, particularly those based on SI, are crucial for autono- mous coordination, including path planning, collision avoidance, formation control, and decision-making. The power source, often batteries or a tethered supply, is critical for UAV operation, influencing flight time and overall performance. Finally, navigation systems, such as GPS, inertial navigation, and visual odometry, allow UAVs to navigate autonomously and avoid collisions, ensuring efficient and safe operations.",
+        "source": "/Users/ved/Documents/repos/modelicon-knowledgecat/data/UAV swarms research challenges and future directions.pdf",
+        "source_name": "UAV swarms research challenges and future directions.pdf",
+        "page": 4,
+        "chunk_index": 4,
+        "file_type": "text_pdf",
+        "distance": 0.3336077928543091,
+        "score": 0.8331961035728455
+      },
+      {
+        "id": "/Users/ved/Documents/repos/modelicon-knowledgecat/data/id717_vf.pdf::chunk_0",
+        "document": "passage: ACTA TECHNICA JAURINENSIS Vol. XX, No. Y, pp. ZZ-ZZ, 2023 10.14513/actatechjaur.00717 Challenges of the visual line of sight operations of unmanned aerial vehicles Zsolt S\u00e1ndor* Drone Operations Hungary Ltd. V\u00e1ci utca 10., 1052 Budapest, Hungary *e-mail: zsolt.sandor1@gmail.com Submitted: 17/10/2023 Accepted: 03/11/2023 Published online: 24/11/2023 Abstract: The following question often emerges: what is the maximum distance during a visual line of sight (VLOS) operation between the remote pilot and the unmanned aerial vehicle (UAV)? The answer is complex, and there is no particular number because it depends on several factors that have to be jointly taken into consideration. The generally mentioned 1 km rule is not applicable for all cases. In some cases, 1 km means the absolute maximum. However, it should be considered that in certain situations, the operation can get out of the VLOS operation limits, even if obstacles and other factors do not hinder the view of the UAV. Keywords: unmanned aerial vehicle, UAS, UAV, visibility, beyond visual line of sight operation, drone fulfilment of the UAS operations are still open. This I. INTRODUCTION results that the standards are constantly changing This article presents the challenges and limits of based on the user experience and the accident and the visual line of sight and beyond visual line of sight incident data. operations of unmanned aircraft systems based on In the article, the author presents the results of the European regulations. These factors have a regulation in a practical way and shows the significant influence on the execution of a single difficulties of the usage. Moreover, it reveals a operation. The article is based on European possible future way that may influence the usage and regulations, but some American solutions are also extend the potential technical means. presented as best practices or meaningful outlooks. Moreover, the article presents the challenges of This article is considered a review of the current BVLOS and VLOS operations from the aviation regulations in a technical way with operational safety viewpoint. examples, future implementation and development outlook. The topic is current and controversial due to the complex reading of the regulations and the diverse Reviewing the following definitions and the applicable solutions. The topic has not yet been connected explanations is essential for a better researched, and there is only one empirical result, understanding of the subject. which is the basis of the German national regulation. \uf0b7 Visual line of sight operation (VLOS): Based on the Commission Implementing Regulation This is the reason why the references of the article",
+        "source": "/Users/ved/Documents/repos/modelicon-knowledgecat/data/id717_vf.pdf",
+        "source_name": "id717_vf.pdf",
+        "page": 1,
+        "chunk_index": 0,
+        "file_type": "text_pdf",
+        "distance": 0.3671274185180664,
+        "score": 0.8164362907409668
+      }
+    ]
+  },
+  {
     "query": "adsorption",
     "time": "2026-06-09 09:43",
     "results": 5,
@@ -126,11 +168,6 @@
         "score": 0.8715062737464905
       }
     ]
-  },
-  {
-    "query": "drone",
-    "time": "2026-06-09 09:34",
-    "results": 3
   },
   {
     "query": "pressure swing adsorption",
