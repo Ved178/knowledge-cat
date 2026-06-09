@@ -38,7 +38,7 @@ chroma_db/
 *.sqlite3
 
 # Large model files
-models/
+/models/
 
 /data
 
