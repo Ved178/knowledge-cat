@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
-SUPPORTED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".tiff"}
+OFFICE_DOC_EXTENSIONS = {".docx", ".doc"}
+OFFICE_PPTX_EXTENSIONS = {".pptx", ".ppt"}
+OFFICE_TABULAR_EXTENSIONS = {".xlsx", ".xls", ".csv"}
+OFFICE_EXTENSIONS = OFFICE_DOC_EXTENSIONS | OFFICE_PPTX_EXTENSIONS | OFFICE_TABULAR_EXTENSIONS
+
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".tiff"}
+SUPPORTED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".tiff"} | OFFICE_EXTENSIONS
 
 PASSAGE_PREFIX = "passage: "
 QUERY_PREFIX = "query: "

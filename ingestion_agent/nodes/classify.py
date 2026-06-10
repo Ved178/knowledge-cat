@@ -7,11 +7,16 @@ from typing import Any
 
 import pdfplumber
 
-from ingestion_agent.constants import IMAGE_EXTENSIONS
+from ingestion_agent.constants import (
+    IMAGE_EXTENSIONS,
+    OFFICE_DOC_EXTENSIONS,
+    OFFICE_PPTX_EXTENSIONS,
+    OFFICE_TABULAR_EXTENSIONS,
+)
 
 
 def classify_file(state: dict[str, Any]) -> dict[str, Any]:
-    """Classify the current file as a text PDF, scanned PDF, image, or unsupported."""
+    """Classify the current file as a text PDF, scanned PDF, image, office type, or unsupported."""
     file_path = state.get("current_file", "")
     suffix = Path(file_path).suffix.lower()
 
@@ -32,6 +37,12 @@ def classify_file(state: dict[str, Any]) -> dict[str, Any]:
                 "skip_reason": f"PDF classification failed: {exc}",
                 "status": f"Skipped {file_path}",
             }
+    elif suffix in OFFICE_DOC_EXTENSIONS:
+        file_type = "office_doc"
+    elif suffix in OFFICE_PPTX_EXTENSIONS:
+        file_type = "office_pptx"
+    elif suffix in OFFICE_TABULAR_EXTENSIONS:
+        file_type = "office_tabular"
     else:
         file_type = "unsupported"
 

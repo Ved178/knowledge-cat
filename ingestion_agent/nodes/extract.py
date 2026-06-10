@@ -80,6 +80,9 @@ def extract_text(state: dict[str, Any]) -> dict[str, Any]:
             extracted_text = _extract_scanned_pdf(file_path)
         elif file_type == "image":
             extracted_text = _extract_image(file_path)
+        elif file_type in ("office_doc", "office_pptx", "office_tabular"):
+            from ingestion_agent.office import parse_office_file
+            extracted_text = parse_office_file(file_path)["content"]
         else:
             raise ValueError(f"Unsupported file type for extraction: {file_type}")
 

@@ -42,6 +42,8 @@ The setup script (~2.5 GB total):
 3. Installs all Python dependencies (CPU-only PyTorch on Windows to avoid CUDA bloat)
 4. Downloads `intfloat/e5-large-v2` in safetensors format only (~1.3 GB — skips unused ONNX/OpenVINO variants)
 
+To also ingest `.doc`, `.ppt`, and `.xls` files, install LibreOffice separately ([libreoffice.org](https://www.libreoffice.org/)) and ensure `soffice` is on your PATH. This is optional — the pipeline runs and ingests all other formats without it.
+
 ## One-Click Run
 
 After setup, use the launcher scripts to run each part of the pipeline without a terminal.
@@ -59,11 +61,17 @@ To ingest a different folder, open `run_ingest.command` or `run_ingest.bat` in a
 
 ## Supported Files
 
-- Text PDFs: `.pdf`
-- Scanned PDFs: `.pdf`
-- Images: `.png`, `.jpg`, `.jpeg`, `.tiff`
+| Format | Extensions | Notes |
+|---|---|---|
+| Text PDFs | `.pdf` | Native text extraction via pdfplumber |
+| Scanned PDFs | `.pdf` | Auto-detected; OCR via Tesseract |
+| Images | `.png` `.jpg` `.jpeg` `.tiff` | OCR via Tesseract |
+| Word documents | `.docx` `.doc` | `.doc` requires LibreOffice |
+| PowerPoint | `.pptx` `.ppt` | Per-slide page markers; `.ppt` requires LibreOffice |
+| Excel spreadsheets | `.xlsx` `.xls` | `.xls` requires LibreOffice |
+| CSV | `.csv` | — |
 
-Unsupported files are skipped and logged to `ingestion_log.db`.
+Unsupported files are skipped and logged to `ingestion_log.db`. Legacy formats (`.doc`, `.ppt`, `.xls`) that cannot be converted because LibreOffice is absent are also logged and skipped rather than crashing the run.
 
 ## Ingestion (CLI)
 

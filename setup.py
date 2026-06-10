@@ -73,7 +73,7 @@ def check_python() -> None:
 # ── Step 2: System dependencies ───────────────────────────────────────────────
 
 def install_system_deps() -> None:
-    banner("Installing system dependencies (Tesseract OCR + Poppler)")
+    banner("Installing system dependencies (Tesseract OCR + Poppler)\n  Note: LibreOffice is optional — install it separately for .doc/.ppt/.xls support")
     if on_macos():
         _install_macos_deps()
     elif on_windows():
@@ -220,6 +220,9 @@ def print_done() -> None:
 
   Generate embedding visualisation plots:
     {py} plot_embeddings.py --chroma-path ./chroma_db
+
+  Supported formats: PDF, images (PNG/JPG/TIFF), Word (.docx), PowerPoint (.pptx),
+  Excel (.xlsx), CSV. Legacy .doc/.ppt/.xls formats also work if LibreOffice is installed.
 """)
 
 

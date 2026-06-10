@@ -209,10 +209,26 @@ def _page_chunks(
     return chunks
 
 
+def _tabular_candidate_chunks(
+    text: str, chunk_size: int, overlap: int
+) -> list[tuple[int, str]]:
+    """Split tabular content into overlapping word windows without prose cleaning.
+
+    Bypasses _prepare_pages so that numeric-leading rows (e.g. spreadsheet data)
+    are never dropped by the PDF-tuned PAGE_FOOTER_PATTERN.
+    """
+    words = text.split()
+    if not words:
+        return []
+    windows = _window_words(words, chunk_size, overlap)
+    return [(1, w) for w in windows]
+
+
 def chunk_text(state: dict[str, Any]) -> dict[str, Any]:
     """Create overlapping passage-prefixed chunks with per-chunk metadata."""
     file_path = state.get("current_file", "")
     extracted_text = state.get("extracted_text", "")
+    file_type = state.get("file_type", "")
     chunk_size = int(state.get("chunk_size_tokens") or CHUNK_SIZE_TOKENS)
     overlap = int(state.get("chunk_overlap_tokens") or CHUNK_OVERLAP_TOKENS)
     min_chunk_size = int(state.get("min_chunk_tokens") or MIN_CHUNK_TOKENS)
@@ -228,14 +244,17 @@ def chunk_text(state: dict[str, Any]) -> dict[str, Any]:
     if min_chunk_size < 0:
         raise ValueError("min_chunk_tokens must be non-negative")
 
-    for page_number, lines in _prepare_pages(extracted_text):
-        candidate_chunks.extend(_page_chunks(
-            page_number,
-            lines,
-            chunk_size=chunk_size,
-            overlap=overlap,
-            skip_references=skip_references,
-        ))
+    if file_type == "office_tabular":
+        candidate_chunks = _tabular_candidate_chunks(extracted_text, chunk_size, overlap)
+    else:
+        for page_number, lines in _prepare_pages(extracted_text):
+            candidate_chunks.extend(_page_chunks(
+                page_number,
+                lines,
+                chunk_size=chunk_size,
+                overlap=overlap,
+                skip_references=skip_references,
+            ))
 
     filtered_chunks = [
         (page_number, chunk_body)
