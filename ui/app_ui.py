@@ -12,8 +12,9 @@ if str(_REPO_ROOT) not in sys.path:
 import streamlit as st
 
 from ingestion_agent.agent import build_graph, initial_state
+from query_agent import lmstudio
 from query_agent.agent import build_query_graph, initial_query_state
-from query_agent.constants import DEFAULT_TOP_K
+from query_agent.constants import DEFAULT_LM_STUDIO_BASE_URL, DEFAULT_LM_STUDIO_MODEL, DEFAULT_TOP_K
 
 _LOCAL_MODEL = str(_REPO_ROOT / "models" / "e5-large-v2")
 _EMBEDDING_MODEL = _LOCAL_MODEL if Path(_LOCAL_MODEL).is_dir() else "intfloat/e5-large-v2"
@@ -26,17 +27,22 @@ _PASSAGE_PREFIX = "passage: "
 
 @st.cache_resource(show_spinner="Loading embedding model…")
 def _get_query_graph():
-    graph, lm_available, resolved_model = build_query_graph(
+    graph, _lm_available, _resolved_model = build_query_graph(
         chroma_path=_CHROMA_PATH,
         embedding_model=_EMBEDDING_MODEL,
     )
-    return graph, lm_available, resolved_model
+    return graph
 
 
 # ── backend wrappers ──────────────────────────────────────────────────────────
 
 def search_documents(query: str, top_k: int = DEFAULT_TOP_K):
-    graph, lm_available, lm_model = _get_query_graph()
+    graph = _get_query_graph()
+    lm_available = lmstudio.check_available(DEFAULT_LM_STUDIO_BASE_URL)
+    lm_model = (
+        lmstudio.get_first_model(DEFAULT_LM_STUDIO_BASE_URL) or DEFAULT_LM_STUDIO_MODEL
+        if lm_available else DEFAULT_LM_STUDIO_MODEL
+    )
     state = initial_query_state(
         query,
         lm_studio_available=lm_available,
