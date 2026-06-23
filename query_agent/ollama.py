@@ -60,11 +60,16 @@ def generate(
     base_url: str = DEFAULT_OLLAMA_BASE_URL,
     timeout: float = 60.0,
 ) -> str:
-    """Call Ollama's OpenAI-compatible chat completions endpoint and return the reply.
+    """Call Ollama's native /api/chat endpoint and return the reply.
 
     Uses a thread + wall-clock timeout so thinking models (Qwen3, DeepSeek-R1) that
     spend a long time before emitting the first token are cut off correctly.
     """
+    # Derive native Ollama root from the OpenAI-compat base URL (strip trailing /v1).
+    ollama_root = base_url.rstrip("/")
+    if ollama_root.endswith("/v1"):
+        ollama_root = ollama_root[:-3]
+
     # /no_think disables the CoT thinking phase on Qwen3 and compatible models.
     messages = [
         {"role": "system", "content": "/no_think"},
@@ -75,12 +80,14 @@ def generate(
             "model": model,
             "messages": messages,
             "stream": False,
-            "temperature": 0.2,
-            "options": {"num_ctx": 64000},
+            "options": {
+                "temperature": 0.2,
+                "num_ctx": 64000,
+            },
         }
     ).encode()
     req = urllib.request.Request(
-        f"{base_url}/chat/completions",
+        f"{ollama_root}/api/chat",
         data=payload,
         method="POST",
         headers={"Content-Type": "application/json"},
@@ -92,7 +99,7 @@ def generate(
         try:
             with urllib.request.urlopen(req, timeout=timeout + 10) as resp:
                 data = json.loads(resp.read())
-                result_queue.put(data["choices"][0]["message"]["content"].strip())
+                result_queue.put(data["message"]["content"].strip())
         except Exception as exc:
             result_queue.put(exc)
 
