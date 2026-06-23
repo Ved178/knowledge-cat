@@ -12,9 +12,9 @@ if str(_REPO_ROOT) not in sys.path:
 import streamlit as st
 
 from ingestion_agent.agent import build_graph, initial_state
-from query_agent import lmstudio
+from query_agent import ollama
 from query_agent.agent import build_query_graph, initial_query_state
-from query_agent.constants import DEFAULT_LM_STUDIO_BASE_URL, DEFAULT_LM_STUDIO_MODEL, DEFAULT_TOP_K
+from query_agent.constants import DEFAULT_OLLAMA_BASE_URL, DEFAULT_OLLAMA_MODEL, DEFAULT_TOP_K
 
 _LOCAL_MODEL = str(_REPO_ROOT / "models" / "e5-large-v2")
 _EMBEDDING_MODEL = _LOCAL_MODEL if Path(_LOCAL_MODEL).is_dir() else "intfloat/e5-large-v2"
@@ -27,7 +27,7 @@ _PASSAGE_PREFIX = "passage: "
 
 @st.cache_resource(show_spinner="Loading embedding model…")
 def _get_query_graph():
-    graph, _lm_available, _resolved_model = build_query_graph(
+    graph, _ollama_available, _resolved_model = build_query_graph(
         chroma_path=_CHROMA_PATH,
         embedding_model=_EMBEDDING_MODEL,
     )
@@ -38,16 +38,16 @@ def _get_query_graph():
 
 def search_documents(query: str, top_k: int = DEFAULT_TOP_K):
     graph = _get_query_graph()
-    lm_available = lmstudio.check_available(DEFAULT_LM_STUDIO_BASE_URL)
-    lm_model = (
-        lmstudio.get_first_model(DEFAULT_LM_STUDIO_BASE_URL) or DEFAULT_LM_STUDIO_MODEL
-        if lm_available else DEFAULT_LM_STUDIO_MODEL
+    ollama_available = ollama.check_available(DEFAULT_OLLAMA_BASE_URL)
+    ollama_model = (
+        ollama.get_first_model(DEFAULT_OLLAMA_BASE_URL) or DEFAULT_OLLAMA_MODEL
+        if ollama_available else DEFAULT_OLLAMA_MODEL
     )
     state = initial_query_state(
         query,
-        lm_studio_available=lm_available,
+        ollama_available=ollama_available,
         top_k=top_k,
-        lm_studio_model=lm_model,
+        ollama_model=ollama_model,
     )
     result = graph.invoke(state)
     return (

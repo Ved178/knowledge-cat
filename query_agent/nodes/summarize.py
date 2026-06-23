@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from query_agent import lmstudio
+from query_agent import ollama
 from query_agent.constants import (
-    DEFAULT_LM_STUDIO_BASE_URL,
-    DEFAULT_LM_STUDIO_MODEL,
+    DEFAULT_OLLAMA_BASE_URL,
+    DEFAULT_OLLAMA_MODEL,
     SUMMARY_PROMPT,
 )
 
@@ -17,13 +17,13 @@ _MAX_DOCS_FOR_SUMMARY = 5
 
 def summarize(state: dict[str, Any]) -> dict[str, Any]:
     """Generate a 2-3 sentence answer with inline citations from the top ranked chunks."""
-    if not state.get("lm_studio_available"):
+    if not state.get("ollama_available"):
         return {**state, "summary": ""}
 
     ranked: list[dict[str, Any]] = list(state.get("ranked_documents") or [])
     raw_query = state.get("raw_query", "")
-    model = state.get("lm_studio_model", DEFAULT_LM_STUDIO_MODEL)
-    base_url = state.get("lm_studio_base_url", DEFAULT_LM_STUDIO_BASE_URL)
+    model = state.get("ollama_model", DEFAULT_OLLAMA_MODEL)
+    base_url = state.get("ollama_base_url", DEFAULT_OLLAMA_BASE_URL)
 
     if not ranked:
         return {**state, "summary": ""}
@@ -35,7 +35,7 @@ def summarize(state: dict[str, Any]) -> dict[str, Any]:
 
     try:
         prompt = SUMMARY_PROMPT.format(query=raw_query, excerpts=excerpts)
-        summary = lmstudio.generate(prompt, model=model, base_url=base_url, timeout=180.0)
+        summary = ollama.generate(prompt, model=model, base_url=base_url, timeout=180.0)
         return {**state, "summary": summary}
     except Exception:
         return {**state, "summary": ""}

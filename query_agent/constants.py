@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 DEFAULT_TOP_K = 5
-# LM Studio serves an OpenAI-compatible API at port 1234 by default.
-DEFAULT_LM_STUDIO_MODEL = "local-model"
-DEFAULT_LM_STUDIO_BASE_URL = "http://localhost:1234/v1"
+# Ollama serves an OpenAI-compatible API at port 11434 by default.
+DEFAULT_OLLAMA_MODEL = ""
+DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434/v1"
 
 REFORMULATION_PROMPT = """\
 You are a search query optimizer for a scientific document knowledge base.
