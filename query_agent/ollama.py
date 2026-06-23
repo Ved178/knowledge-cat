@@ -50,7 +50,7 @@ def _is_embedding_model(model_id: str) -> bool:
 def _is_thinking_model(model_id: str) -> bool:
     """Heuristic: flag known thinking/reasoning model families."""
     lower = model_id.lower()
-    return any(pat in lower for pat in ("qwen3", "deepseek-r1", "qwq", "/r1"))
+    return any(pat in lower for pat in ("deepseek-r1", "qwq", "/r1"))
 
 
 def generate(
