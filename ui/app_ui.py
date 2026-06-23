@@ -12,6 +12,7 @@ if str(_REPO_ROOT) not in sys.path:
 import streamlit as st
 
 from ingestion_agent.agent import build_graph, initial_state
+from ingestion_agent.db.chroma_client import get_chroma_collection
 from query_agent import lmstudio
 from query_agent.agent import build_query_graph, initial_query_state
 from query_agent.constants import DEFAULT_LM_STUDIO_BASE_URL, DEFAULT_LM_STUDIO_MODEL, DEFAULT_TOP_K
@@ -34,15 +35,50 @@ def _get_query_graph():
     return graph
 
 
+# ── indexed-folder stats ──────────────────────────────────────────────────────
+
+@st.cache_data(ttl=30, show_spinner=False)
+def get_ingested_folder_stats() -> dict[str, dict]:
+    """Return per-folder stats derived from Chroma metadata.
+
+    Returns a dict mapping folder path → {"files": [str, …], "latest_mtime": float}.
+    """
+    try:
+        collection = get_chroma_collection(persist_path=_CHROMA_PATH)
+        result = collection.get(include=["metadatas"])
+    except Exception:
+        return {}
+
+    folders: dict[str, dict] = {}
+    for meta in result.get("metadatas") or []:
+        source = meta.get("source", "")
+        if not source:
+            continue
+        folder = str(Path(source).parent)
+        mtime = float(meta.get("file_last_modified") or 0)
+        entry = folders.setdefault(folder, {"files": [], "latest_mtime": 0.0})
+        if source not in entry["files"]:
+            entry["files"].append(source)
+        if mtime > entry["latest_mtime"]:
+            entry["latest_mtime"] = mtime
+
+    return dict(sorted(folders.items()))
+
+
 # ── backend wrappers ──────────────────────────────────────────────────────────
 
-def search_documents(query: str, top_k: int = DEFAULT_TOP_K):
+@st.cache_data(ttl=30, show_spinner=False)
+def _fetch_lm_models() -> list[str]:
+    return lmstudio.get_all_models(DEFAULT_LM_STUDIO_BASE_URL)
+
+
+def search_documents(query: str, top_k: int = DEFAULT_TOP_K, model: str | None = None):
     graph = _get_query_graph()
     lm_available = lmstudio.check_available(DEFAULT_LM_STUDIO_BASE_URL)
-    lm_model = (
-        lmstudio.get_first_model(DEFAULT_LM_STUDIO_BASE_URL) or DEFAULT_LM_STUDIO_MODEL
-        if lm_available else DEFAULT_LM_STUDIO_MODEL
-    )
+    if lm_available:
+        lm_model = model or lmstudio.get_first_model(DEFAULT_LM_STUDIO_BASE_URL) or DEFAULT_LM_STUDIO_MODEL
+    else:
+        lm_model = DEFAULT_LM_STUDIO_MODEL
     state = initial_query_state(
         query,
         lm_studio_available=lm_available,
@@ -61,14 +97,16 @@ def ingest_documents(folder_path: str, progress_slot) -> dict:
     graph = build_graph(chroma_path=_CHROMA_PATH, embedding_model=_EMBEDDING_MODEL)
     run_state = initial_state([folder_path])
     config = {"recursion_limit": 100_000}
-    counts = {"processed": 0, "skipped": 0, "errors": 0}
+    counts = {"newly_indexed": 0, "up_to_date": 0, "skipped": 0, "errors": 0}
     for event in graph.stream(run_state, config=config, stream_mode="values"):
-        counts["processed"] = len(event.get("indexed_files") or [])
+        counts["newly_indexed"] = len(event.get("indexed_files") or [])
+        counts["up_to_date"] = len(event.get("pre_indexed_files") or [])
         counts["skipped"] = len(event.get("skipped_files") or [])
         counts["errors"] = len(event.get("error_log") or [])
         progress_slot.caption(
-            f"processed {counts['processed']}  •  skipped {counts['skipped']}"
-            f"  •  errors {counts['errors']}  —  {event.get('status', '')}"
+            f"new {counts['newly_indexed']}  •  up to date {counts['up_to_date']}"
+            f"  •  skipped {counts['skipped']}  •  errors {counts['errors']}"
+            f"  —  {event.get('status', '')}"
         )
     return counts
 
@@ -157,12 +195,27 @@ _logo = Path(__file__).parent / "modelicon_logo.png"
 if _logo.exists():
     st.image(str(_logo), width=180)
 
-for key, default in [("selected_query", ""), ("display_result", None)]:
+for key, default in [("selected_query", ""), ("display_result", None), ("selected_model", None)]:
     if key not in st.session_state:
         st.session_state[key] = default
 
 # ── sidebar ───────────────────────────────────────────────────────────────────
 
+st.sidebar.title("LLM")
+_available_models = _fetch_lm_models()
+if _available_models:
+    _model_options = ["Auto (best available)"] + _available_models
+    _current_idx = (
+        _model_options.index(st.session_state.selected_model)
+        if st.session_state.selected_model in _model_options else 0
+    )
+    _chosen = st.sidebar.selectbox("Model", _model_options, index=_current_idx)
+    st.session_state.selected_model = None if _chosen == "Auto (best available)" else _chosen
+else:
+    st.sidebar.caption("LM Studio not connected — running in semantic search mode")
+    st.session_state.selected_model = None
+
+st.sidebar.markdown("---")
 st.sidebar.title("⚙️ Ingest Documents")
 
 folder_path = st.sidebar.text_input("Folder to ingest", placeholder="/path/to/your/docs")
@@ -179,8 +232,31 @@ if ingest_btn:
             counts = ingest_documents(folder_path, progress_slot)
         progress_slot.empty()
         st.sidebar.success(
-            f"Done — {counts['processed']} indexed, {counts['skipped']} skipped, {counts['errors']} errors"
+            f"Done — {counts['newly_indexed']} newly indexed, "
+            f"{counts['up_to_date']} already up to date, "
+            f"{counts['skipped']} skipped, {counts['errors']} errors"
         )
+        get_ingested_folder_stats.clear()
+
+st.sidebar.markdown("---")
+st.sidebar.subheader("📁 Indexed Folders")
+
+_folder_stats = get_ingested_folder_stats()
+if not _folder_stats:
+    st.sidebar.caption("No folders indexed yet")
+else:
+    _total_files = sum(len(v["files"]) for v in _folder_stats.values())
+    st.sidebar.caption(f"{len(_folder_stats)} folder{'s' if len(_folder_stats) != 1 else ''}  •  {_total_files} file{'s' if _total_files != 1 else ''}")
+    for _folder, _info in _folder_stats.items():
+        _label = Path(_folder).name or _folder
+        _count = len(_info["files"])
+        _mtime = datetime.fromtimestamp(_info["latest_mtime"]).strftime("%Y-%m-%d") if _info["latest_mtime"] else ""
+        with st.sidebar.expander(f"{_label}  ({_count})", expanded=False):
+            if _mtime:
+                st.caption(f"Last indexed: {_mtime}")
+            st.caption(_folder)
+            for _f in sorted(_info["files"]):
+                st.text(Path(_f).name)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("🕒 Search History")
@@ -218,6 +294,11 @@ with st.form("search_form"):
         value=st.session_state.selected_query,
         placeholder="e.g. convergence detection in simulations",
     )
+    top_k = st.number_input(
+        "Results to return (top-k)",
+        min_value=1, max_value=50,
+        value=DEFAULT_TOP_K, step=1,
+    )
     submitted = st.form_submit_button("Search")
 
 if submitted:
@@ -225,7 +306,7 @@ if submitted:
         st.warning("Please enter a query")
     else:
         with st.spinner("Searching…"):
-            results, summary, reformulated = search_documents(query)
+            results, summary, reformulated = search_documents(query, top_k=int(top_k), model=st.session_state.selected_model)
         display = {"query": query, "results": results, "summary": summary, "reformulated": reformulated}
         st.session_state.display_result = display
         st.session_state.selected_query = ""
