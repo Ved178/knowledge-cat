@@ -76,6 +76,7 @@ def generate(
             "messages": messages,
             "stream": False,
             "temperature": 0.2,
+            "options": {"num_ctx": 64000},
         }
     ).encode()
     req = urllib.request.Request(
