@@ -82,7 +82,7 @@ def generate(
             "stream": False,
             "options": {
                 "temperature": 0.2,
-                "num_ctx": 64000,
+                "num_ctx": 32000,
             },
         }
     ).encode()
