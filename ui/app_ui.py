@@ -13,9 +13,9 @@ import streamlit as st
 
 from ingestion_agent.agent import build_graph, initial_state
 from ingestion_agent.db.chroma_client import get_chroma_collection
-from query_agent import lmstudio
+from query_agent import ollama
 from query_agent.agent import build_query_graph, initial_query_state
-from query_agent.constants import DEFAULT_LM_STUDIO_BASE_URL, DEFAULT_LM_STUDIO_MODEL, DEFAULT_TOP_K
+from query_agent.constants import DEFAULT_OLLAMA_BASE_URL, DEFAULT_OLLAMA_MODEL, DEFAULT_TOP_K
 
 _LOCAL_MODEL = str(_REPO_ROOT / "models" / "e5-large-v2")
 _EMBEDDING_MODEL = _LOCAL_MODEL if Path(_LOCAL_MODEL).is_dir() else "intfloat/e5-large-v2"
@@ -28,7 +28,7 @@ _PASSAGE_PREFIX = "passage: "
 
 @st.cache_resource(show_spinner="Loading embedding model…")
 def _get_query_graph():
-    graph, _lm_available, _resolved_model = build_query_graph(
+    graph, _ollama_available, _resolved_model = build_query_graph(
         chroma_path=_CHROMA_PATH,
         embedding_model=_EMBEDDING_MODEL,
     )
@@ -68,22 +68,22 @@ def get_ingested_folder_stats() -> dict[str, dict]:
 # ── backend wrappers ──────────────────────────────────────────────────────────
 
 @st.cache_data(ttl=30, show_spinner=False)
-def _fetch_lm_models() -> list[str]:
-    return lmstudio.get_all_models(DEFAULT_LM_STUDIO_BASE_URL)
+def _fetch_ollama_models() -> list[str]:
+    return ollama.get_all_models(DEFAULT_OLLAMA_BASE_URL)
 
 
 def search_documents(query: str, top_k: int = DEFAULT_TOP_K, model: str | None = None):
     graph = _get_query_graph()
-    lm_available = lmstudio.check_available(DEFAULT_LM_STUDIO_BASE_URL)
-    if lm_available:
-        lm_model = model or lmstudio.get_first_model(DEFAULT_LM_STUDIO_BASE_URL) or DEFAULT_LM_STUDIO_MODEL
-    else:
-        lm_model = DEFAULT_LM_STUDIO_MODEL
+    ollama_available = ollama.check_available(DEFAULT_OLLAMA_BASE_URL)
+    ollama_model = (
+        model or ollama.get_first_model(DEFAULT_OLLAMA_BASE_URL) or DEFAULT_OLLAMA_MODEL
+        if ollama_available else DEFAULT_OLLAMA_MODEL
+    )
     state = initial_query_state(
         query,
-        lm_studio_available=lm_available,
+        ollama_available=ollama_available,
         top_k=top_k,
-        lm_studio_model=lm_model,
+        ollama_model=ollama_model,
     )
     result = graph.invoke(state)
     return (
@@ -202,7 +202,7 @@ for key, default in [("selected_query", ""), ("display_result", None), ("selecte
 # ── sidebar ───────────────────────────────────────────────────────────────────
 
 st.sidebar.title("LLM")
-_available_models = _fetch_lm_models()
+_available_models = _fetch_ollama_models()
 if _available_models:
     _model_options = ["Auto (best available)"] + _available_models
     _current_idx = (
@@ -212,7 +212,7 @@ if _available_models:
     _chosen = st.sidebar.selectbox("Model", _model_options, index=_current_idx)
     st.session_state.selected_model = None if _chosen == "Auto (best available)" else _chosen
 else:
-    st.sidebar.caption("LM Studio not connected — running in semantic search mode")
+    st.sidebar.caption("Ollama not connected — running in semantic search mode")
     st.session_state.selected_model = None
 
 st.sidebar.markdown("---")

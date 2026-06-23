@@ -1,4 +1,4 @@
-"""LM Studio HTTP helpers (OpenAI-compatible API, stdlib-only, no extra deps)."""
+"""Ollama HTTP helpers (OpenAI-compatible API, stdlib-only, no extra deps)."""
 
 from __future__ import annotations
 
@@ -7,11 +7,11 @@ import queue
 import threading
 import urllib.request
 
-from query_agent.constants import DEFAULT_LM_STUDIO_BASE_URL, DEFAULT_LM_STUDIO_MODEL
+from query_agent.constants import DEFAULT_OLLAMA_BASE_URL, DEFAULT_OLLAMA_MODEL
 
 
-def check_available(base_url: str = DEFAULT_LM_STUDIO_BASE_URL) -> bool:
-    """Return True if LM Studio is reachable at the given base URL."""
+def check_available(base_url: str = DEFAULT_OLLAMA_BASE_URL) -> bool:
+    """Return True if Ollama is reachable at the given base URL."""
     try:
         urllib.request.urlopen(f"{base_url}/models", timeout=3)
         return True
@@ -19,7 +19,17 @@ def check_available(base_url: str = DEFAULT_LM_STUDIO_BASE_URL) -> bool:
         return False
 
 
-def get_first_model(base_url: str = DEFAULT_LM_STUDIO_BASE_URL) -> str | None:
+def get_all_models(base_url: str = DEFAULT_OLLAMA_BASE_URL) -> list[str]:
+    """Return all available chat model IDs (excludes embedding models)."""
+    try:
+        with urllib.request.urlopen(f"{base_url}/models", timeout=3) as resp:
+            data = json.loads(resp.read())
+            return [m["id"] for m in (data.get("data") or []) if not _is_embedding_model(m["id"])]
+    except Exception:
+        return []
+
+
+def get_first_model(base_url: str = DEFAULT_OLLAMA_BASE_URL) -> str | None:
     """Return the best available chat model ID, preferring non-thinking models."""
     try:
         with urllib.request.urlopen(f"{base_url}/models", timeout=3) as resp:
@@ -46,11 +56,11 @@ def _is_thinking_model(model_id: str) -> bool:
 def generate(
     prompt: str,
     *,
-    model: str = DEFAULT_LM_STUDIO_MODEL,
-    base_url: str = DEFAULT_LM_STUDIO_BASE_URL,
+    model: str = DEFAULT_OLLAMA_MODEL,
+    base_url: str = DEFAULT_OLLAMA_BASE_URL,
     timeout: float = 60.0,
 ) -> str:
-    """Call LM Studio's OpenAI-compatible chat completions endpoint and return the reply.
+    """Call Ollama's OpenAI-compatible chat completions endpoint and return the reply.
 
     Uses a thread + wall-clock timeout so thinking models (Qwen3, DeepSeek-R1) that
     spend a long time before emitting the first token are cut off correctly.
@@ -90,7 +100,7 @@ def generate(
     try:
         result = result_queue.get(timeout=timeout)
     except queue.Empty:
-        raise TimeoutError(f"LM Studio did not respond within {timeout}s") from None
+        raise TimeoutError(f"Ollama did not respond within {timeout}s") from None
 
     if isinstance(result, Exception):
         raise result

@@ -215,7 +215,7 @@ def print_done() -> None:
   Ingest your documents:
     {py} ingest.py --paths ./data
 
-  Search your knowledge base (requires LM Studio for summaries):
+  Search your knowledge base (requires Ollama for summaries):
     {py} query.py --embedding-model models/e5-large-v2
 
   Generate embedding visualisation plots:
