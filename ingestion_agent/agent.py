@@ -43,6 +43,7 @@ class IngestionState(TypedDict, total=False):
     skipped_files: list[str]
     error_log: list[dict[str, Any]]
     indexed_files: list[str]
+    pre_indexed_files: list[str]
     status: str
     root_paths: list[str]
     file_type: str
@@ -61,12 +62,13 @@ def update_status(state: IngestionState) -> IngestionState:
     """Update a compact status summary after a terminal per-file node."""
     queued = len(state.get("file_queue") or [])
     processed = len(state.get("indexed_files") or [])
+    up_to_date = len(state.get("pre_indexed_files") or [])
     skipped = len(state.get("skipped_files") or [])
     errors = len(state.get("error_log") or [])
     return {
         **state,
         "status": (
-            f"queued={queued} processed={processed} skipped={skipped} errors={errors}"
+            f"queued={queued} processed={processed} up_to_date={up_to_date} skipped={skipped} errors={errors}"
         ),
     }
 
@@ -157,6 +159,7 @@ def initial_state(
         "skipped_files": [],
         "error_log": [],
         "indexed_files": [],
+        "pre_indexed_files": [],
         "status": "initialized",
         "scanned_roots": False,
         "skip_reason": "",

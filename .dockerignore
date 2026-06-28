@@ -1,0 +1,38 @@
+.git/
+.claude/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Runtime data — mounted as volumes, not baked in
+chroma_db/
+data/
+
+# Local model dir — baked in via builder stage, not copied from host
+models/
+
+# SQLite state files — recreated at runtime
+*.sqlite
+*.db
+
+# Python virtual environment
+env/
+.venv/
+venv/
+
+# Build/dev artifacts
+embedding_plots/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# One-click launchers — not needed inside container
+*.command
+*.bat

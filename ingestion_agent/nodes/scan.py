@@ -37,6 +37,7 @@ def build_scan_drive_node(collection: Collection):
         file_queue = list(state.get("file_queue") or [])
         scanned_roots = bool(state.get("scanned_roots"))
         indexed_files = list(state.get("indexed_files") or [])
+        pre_indexed_files = list(state.get("pre_indexed_files") or [])
         skipped_files = list(state.get("skipped_files") or [])
         force_reindex = bool(state.get("force_reindex", False))
 
@@ -59,7 +60,7 @@ def build_scan_drive_node(collection: Collection):
                     file_path = str(path.resolve())
                     last_modified = os.path.getmtime(file_path)
                     if not force_reindex and _already_indexed(collection, file_path, last_modified):
-                        indexed_files.append(file_path)
+                        pre_indexed_files.append(file_path)
                         continue
                     discovered.append(file_path)
 
@@ -86,6 +87,7 @@ def build_scan_drive_node(collection: Collection):
             "retry_count": retry_count,
             "skipped_files": skipped_files,
             "indexed_files": indexed_files,
+            "pre_indexed_files": pre_indexed_files,
             "status": status,
             "scanned_roots": scanned_roots,
             "last_error": "",

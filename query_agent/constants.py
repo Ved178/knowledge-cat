@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import os
+
 DEFAULT_TOP_K = 5
-# Ollama serves an OpenAI-compatible API at port 11434 by default.
 DEFAULT_OLLAMA_MODEL = ""
-DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434/v1"
+# Override via OLLAMA_BASE_URL env var (e.g. when running inside Docker)
+DEFAULT_OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1")
 
 REFORMULATION_PROMPT = """\
 You are a search query optimizer for a scientific document knowledge base.
