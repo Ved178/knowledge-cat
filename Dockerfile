@@ -11,11 +11,18 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt streamlit
 
+# Optional HF token — pass with: docker compose build --build-arg HF_TOKEN=hf_xxx
+# Authenticated downloads bypass rate limits. Leave blank for anonymous download.
+ARG HF_TOKEN=""
+
 # Bake the embedding model into the image so HF_HUB_OFFLINE=1 works at runtime.
 # Uses snapshot_download (pure HTTP, no git-lfs dependency).
 RUN python - <<'EOF'
+import os
 from huggingface_hub import snapshot_download
-snapshot_download("intfloat/e5-large-v2", local_dir="/model")
+token = os.environ.get("HF_TOKEN") or None
+print(f"Downloading intfloat/e5-large-v2 ({'authenticated' if token else 'anonymous'})...")
+snapshot_download("intfloat/e5-large-v2", local_dir="/model", token=token)
 EOF
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────

@@ -29,6 +29,10 @@ dist/
 build/
 .pytest_cache/
 
+# Secrets — never bake into the image
+.env
+.env.local
+
 # OS noise
 .DS_Store
 Thumbs.db

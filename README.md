@@ -6,7 +6,15 @@ A local knowledge base pipeline with semantic search. Ingests files into a Chrom
 
 The Docker setup bundles the app and an Ollama instance — no local Python or system dependencies required.
 
-**First run** (builds the image and downloads the embedding model, ~3–4 GB total):
+**1. Configure your environment**
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and add your Hugging Face token (optional but recommended — it bypasses anonymous download rate limits). Get a read-only token at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens). Leave `HF_TOKEN=` blank to download anonymously.
+
+**2. Build and start** (~3–4 GB, downloads the embedding model):
 
 ```bash
 docker compose up --build
