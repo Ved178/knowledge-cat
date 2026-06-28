@@ -6,31 +6,35 @@ A local knowledge base pipeline with semantic search. Ingests files into a Chrom
 
 The Docker setup bundles the app and an Ollama instance — no local Python or system dependencies required.
 
-**1. Configure your environment**
+**1. Set up your environment file**
 
 ```bash
 cp .env.example .env
 ```
 
-Open `.env` and add your Hugging Face token (optional but recommended — it bypasses anonymous download rate limits). Get a read-only token at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens). Leave `HF_TOKEN=` blank to download anonymously.
+Open `.env` and optionally add a Hugging Face token. A token bypasses anonymous rate limits and speeds up the embedding model download (~1.3 GB). Get a free read-only token at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens). Leave `HF_TOKEN=` blank to download anonymously.
 
-**2. Build and start** (~3–4 GB, downloads the embedding model):
+**2. Build and start**
 
 ```bash
 docker compose up --build
 ```
 
-Open **http://localhost:8501** in your browser.
+The first build downloads the embedding model and all dependencies (~3–4 GB total). Subsequent starts are fast.
 
-**Pull a model into Ollama** (one-time, persists in a named volume):
+**3. Open the UI**
+
+Go to **http://localhost:8501**.
+
+**4. Pull a language model into Ollama** (one-time per model, persists across restarts)
 
 ```bash
 docker compose exec ollama ollama pull llama3.2
 ```
 
-Any model you pull is available in the UI's model selector immediately. The app falls back to plain semantic search if no model is loaded.
+Any model you pull appears in the UI's model selector immediately. The app falls back to plain semantic search if no model is loaded yet.
 
-### Ingest and query via CLI
+### CLI commands inside Docker
 
 ```bash
 # Ingest documents from ./data
@@ -41,15 +45,13 @@ docker compose run --rm app python ingest.py \
 # Interactive query REPL
 docker compose run --rm -it app python query.py \
   --embedding-model /app/models/e5-large-v2
-```
 
-### Using a different Ollama model
-
-```bash
+# Pull a different model
 docker compose exec ollama ollama pull mistral
+# Then select it in the UI sidebar, or:
+docker compose run --rm -it app python query.py \
+  --embedding-model /app/models/e5-large-v2 --ollama-model mistral
 ```
-
-Then select it in the UI sidebar, or pass `--ollama-model mistral` to the query CLI.
 
 ---
 
