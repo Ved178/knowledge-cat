@@ -5,6 +5,10 @@ from __future__ import annotations
 import os
 
 DEFAULT_TOP_K = 5
+# Minimum similarity score for a result to count as relevant. E5 cosine scores are
+# compressed: on-topic top hits land ≥ ~0.85 while off-topic queries max out ~0.80,
+# so 0.82 rejects unrelated matches while keeping genuine ones.
+DEFAULT_MIN_SCORE = 0.82
 DEFAULT_OLLAMA_MODEL = ""
 # Override via OLLAMA_BASE_URL env var (e.g. when running inside Docker)
 DEFAULT_OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1")

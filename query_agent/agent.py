@@ -11,7 +11,12 @@ from ingestion_agent.constants import DEFAULT_CHROMA_PATH, DEFAULT_COLLECTION_NA
 from ingestion_agent.db.chroma_client import get_chroma_collection
 from ingestion_agent.models.embedder import get_embedding_model
 from query_agent import ollama
-from query_agent.constants import DEFAULT_OLLAMA_BASE_URL, DEFAULT_OLLAMA_MODEL, DEFAULT_TOP_K
+from query_agent.constants import (
+    DEFAULT_MIN_SCORE,
+    DEFAULT_OLLAMA_BASE_URL,
+    DEFAULT_OLLAMA_MODEL,
+    DEFAULT_TOP_K,
+)
 from query_agent.nodes.rank import rank_documents
 from query_agent.nodes.reformulate import reformulate_query
 from query_agent.nodes.retrieve import build_retrieve_node
@@ -27,6 +32,7 @@ class QueryState(TypedDict, total=False):
     summary: str
     ollama_available: bool
     top_k: int
+    min_score: float
     ollama_model: str
     ollama_base_url: str
 
@@ -66,6 +72,7 @@ def initial_query_state(
     *,
     ollama_available: bool,
     top_k: int = DEFAULT_TOP_K,
+    min_score: float = DEFAULT_MIN_SCORE,
     ollama_model: str = DEFAULT_OLLAMA_MODEL,
     ollama_base_url: str = DEFAULT_OLLAMA_BASE_URL,
 ) -> QueryState:
@@ -79,6 +86,7 @@ def initial_query_state(
         "summary": "",
         "ollama_available": ollama_available,
         "top_k": top_k,
+        "min_score": min_score,
         "ollama_model": ollama_model,
         "ollama_base_url": ollama_base_url,
     }

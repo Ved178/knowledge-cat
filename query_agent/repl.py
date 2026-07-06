@@ -7,7 +7,12 @@ import sys
 
 from ingestion_agent.constants import DEFAULT_CHROMA_PATH, DEFAULT_COLLECTION_NAME
 from query_agent.agent import build_query_graph, initial_query_state
-from query_agent.constants import DEFAULT_OLLAMA_BASE_URL, DEFAULT_OLLAMA_MODEL, DEFAULT_TOP_K
+from query_agent.constants import (
+    DEFAULT_MIN_SCORE,
+    DEFAULT_OLLAMA_BASE_URL,
+    DEFAULT_OLLAMA_MODEL,
+    DEFAULT_TOP_K,
+)
 
 _PASSAGE_PREFIX = "passage: "
 
@@ -24,7 +29,10 @@ def _format_results(state: dict) -> str:
         lines.append(f"\n  search: {reformulated}")
 
     if not ranked:
-        lines.append("\n  No results found.")
+        if state.get("raw_results"):
+            lines.append("\n  No sufficiently relevant documents found for this query.")
+        else:
+            lines.append("\n  No results found.")
         return "\n".join(lines)
 
     if summary:
@@ -54,6 +62,7 @@ def run_repl(
     collection_name: str = DEFAULT_COLLECTION_NAME,
     embedding_model: str = "intfloat/e5-large-v2",
     top_k: int = DEFAULT_TOP_K,
+    min_score: float = DEFAULT_MIN_SCORE,
     ollama_model: str = DEFAULT_OLLAMA_MODEL,
     ollama_base_url: str = DEFAULT_OLLAMA_BASE_URL,
 ) -> None:
@@ -94,6 +103,7 @@ def run_repl(
             raw_query,
             ollama_available=ollama_available,
             top_k=top_k,
+            min_score=min_score,
             ollama_model=ollama_model,
             ollama_base_url=ollama_base_url,
         )
@@ -109,6 +119,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--collection", default=DEFAULT_COLLECTION_NAME)
     parser.add_argument("--embedding-model", default="intfloat/e5-large-v2")
     parser.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
+    parser.add_argument(
+        "--min-score",
+        type=float,
+        default=DEFAULT_MIN_SCORE,
+        help="Minimum similarity score (0-1) for a result to be shown; 0 disables the filter",
+    )
     parser.add_argument("--ollama-model", default=DEFAULT_OLLAMA_MODEL)
     parser.add_argument("--ollama-url", default=DEFAULT_OLLAMA_BASE_URL)
     return parser.parse_args()
@@ -121,6 +137,7 @@ def main() -> None:
         collection_name=args.collection,
         embedding_model=args.embedding_model,
         top_k=args.top_k,
+        min_score=args.min_score,
         ollama_model=args.ollama_model,
         ollama_base_url=args.ollama_url,
     )

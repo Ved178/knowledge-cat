@@ -72,9 +72,14 @@ def _fetch_ollama_models() -> list[str]:
     return ollama.get_all_models(DEFAULT_OLLAMA_BASE_URL)
 
 
-def search_documents(query: str, top_k: int = DEFAULT_TOP_K, model: str | None = None):
+def search_documents(
+    query: str,
+    top_k: int = DEFAULT_TOP_K,
+    model: str | None = None,
+    use_llm: bool = True,
+):
     graph = _get_query_graph()
-    ollama_available = ollama.check_available(DEFAULT_OLLAMA_BASE_URL)
+    ollama_available = use_llm and ollama.check_available(DEFAULT_OLLAMA_BASE_URL)
     ollama_model = (
         model or ollama.get_first_model(DEFAULT_OLLAMA_BASE_URL) or DEFAULT_OLLAMA_MODEL
         if ollama_available else DEFAULT_OLLAMA_MODEL
@@ -90,6 +95,7 @@ def search_documents(query: str, top_k: int = DEFAULT_TOP_K, model: str | None =
         result.get("ranked_documents") or [],
         result.get("summary", ""),
         result.get("reformulated_query", ""),
+        bool(result.get("raw_results")),
     )
 
 
@@ -158,7 +164,13 @@ def render_results(display: dict) -> None:
         st.caption(f"Search: {reformulated}")
 
     if not results:
-        st.warning("No matching documents found.")
+        if display.get("had_hits"):
+            st.warning(
+                "No sufficiently relevant documents found — the closest matches "
+                "were below the relevance threshold."
+            )
+        else:
+            st.warning("No matching documents found.")
         return
 
     if summary:
@@ -294,6 +306,15 @@ with st.form("search_form"):
         value=st.session_state.selected_query,
         placeholder="e.g. convergence detection in simulations",
     )
+    search_mode = st.radio(
+        "Search mode",
+        ["LLM-assisted search", "Keyword search"],
+        horizontal=True,
+        help=(
+            "LLM-assisted: an LLM expands your query and summarises the results. "
+            "Keyword: direct semantic search of your query as typed — no LLM calls."
+        ),
+    )
     top_k = st.number_input(
         "Results to return (top-k)",
         min_value=1, max_value=50,
@@ -305,9 +326,21 @@ if submitted:
     if not query.strip():
         st.warning("Please enter a query")
     else:
+        use_llm = search_mode == "LLM-assisted search"
         with st.spinner("Searching…"):
-            results, summary, reformulated = search_documents(query, top_k=int(top_k), model=st.session_state.selected_model)
-        display = {"query": query, "results": results, "summary": summary, "reformulated": reformulated}
+            results, summary, reformulated, had_hits = search_documents(
+                query,
+                top_k=int(top_k),
+                model=st.session_state.selected_model,
+                use_llm=use_llm,
+            )
+        display = {
+            "query": query,
+            "results": results,
+            "summary": summary,
+            "reformulated": reformulated,
+            "had_hits": had_hits,
+        }
         st.session_state.display_result = display
         st.session_state.selected_query = ""
         add_history(query, results, summary, reformulated)
