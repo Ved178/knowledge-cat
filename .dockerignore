@@ -37,6 +37,3 @@ build/
 .DS_Store
 Thumbs.db
 
-# One-click launchers — not needed inside container
-*.command
-*.bat

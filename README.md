@@ -2,7 +2,7 @@
 
 A local knowledge base pipeline with semantic search. Ingests files into a ChromaDB vector store and lets you query them via a Streamlit UI or interactive REPL, with LLM-powered summarisation through Ollama.
 
-## Docker (recommended)
+## Setup (Docker)
 
 The Docker setup bundles the app and an Ollama instance — no local Python or system dependencies required.
 
@@ -55,51 +55,6 @@ docker compose run --rm -it app python query.py \
 
 ---
 
-## Local Setup (alternative)
-
-Requires Python 3.10+.
-
-**macOS** — double-click `setup.command` in Finder (right-click → Open the first time), or:
-
-```bash
-python3 setup.py
-```
-
-**Windows** — double-click `setup.bat`, or:
-
-```bat
-python setup.py
-```
-
-The setup script (~2.5 GB total):
-1. Installs Tesseract OCR + Poppler via Homebrew (macOS) / Chocolatey (Windows)
-2. Creates a `./env` virtual environment
-3. Installs all Python dependencies
-4. Downloads `intfloat/e5-large-v2` in safetensors format (~1.3 GB)
-
-To also ingest `.doc`, `.ppt`, and `.xls` files, install LibreOffice ([libreoffice.org](https://www.libreoffice.org/)) and ensure `soffice` is on your PATH.
-
-### One-click launchers
-
-| macOS | Windows | What it does |
-|---|---|---|
-| `run_ingest.command` | `run_ingest.bat` | Ingest documents from `./data` |
-| `run_query.command` | `run_query.bat` | Open the interactive search REPL |
-| `run_plots.command` | `run_plots.bat` | Generate PCA + t-SNE embedding plots |
-
-### Local CLI
-
-```bash
-# Activate venv first
-source env/bin/activate          # macOS
-env\Scripts\activate             # Windows
-
-python ingest.py --paths ./data --embedding-model models/e5-large-v2
-python query.py --embedding-model models/e5-large-v2
-```
-
----
-
 ## Supported Files
 
 | Format | Extensions | Notes |
@@ -110,6 +65,8 @@ python query.py --embedding-model models/e5-large-v2
 | Word documents | `.docx` `.doc` | `.doc` requires LibreOffice |
 | PowerPoint | `.pptx` `.ppt` | Per-slide page markers; `.ppt` requires LibreOffice |
 | Excel / CSV | `.xlsx` `.xls` `.csv` | `.xls` requires LibreOffice |
+
+Legacy formats (`.doc`, `.ppt`, `.xls`) need LibreOffice (`soffice`), which is **not** included in the Docker image — they are logged as failed ingestions and skipped.
 
 Unsupported files are skipped and logged to `ingestion_log.db`.
 
@@ -137,19 +94,25 @@ Embeds the query, retrieves top-k chunks, ranks by source file, and generates a 
 
 ## Ingestion CLI Reference
 
+All commands run inside the app container via `docker compose run`:
+
 ```bash
 # Resume a checkpointed run
-python ingest.py --paths ./data --embedding-model models/e5-large-v2 --resume
+docker compose run --rm app python ingest.py --paths /app/data \
+  --embedding-model /app/models/e5-large-v2 --resume
 
 # Force-reindex already-stored files
-python ingest.py --paths ./data --embedding-model models/e5-large-v2 --force-reindex
+docker compose run --rm app python ingest.py --paths /app/data \
+  --embedding-model /app/models/e5-large-v2 --force-reindex
 
 # Tune chunking (always pair with --force-reindex)
-python ingest.py --paths ./data --embedding-model models/e5-large-v2 --force-reindex \
+docker compose run --rm app python ingest.py --paths /app/data \
+  --embedding-model /app/models/e5-large-v2 --force-reindex \
   --chunk-size 220 --chunk-overlap 30 --min-chunk-size 40
 
 # Keep references/bibliography sections (skipped by default)
-python ingest.py --paths ./data --embedding-model models/e5-large-v2 --include-reference-chunks
+docker compose run --rm app python ingest.py --paths /app/data \
+  --embedding-model /app/models/e5-large-v2 --include-reference-chunks
 ```
 
 Live progress:
@@ -161,10 +124,16 @@ queued=12 processed=3 skipped=0 errors=0 status=Stored 4 chunks for sample.pdf
 ## Query CLI Reference
 
 ```bash
-python query.py --embedding-model models/e5-large-v2 --top-k 10
-python query.py --ollama-url http://localhost:11434/v1 --ollama-model llama3.2
-python query.py --chroma-path ./chroma_db --collection knowledge_catalyst
+docker compose run --rm -it app python query.py \
+  --embedding-model /app/models/e5-large-v2 --top-k 10
+docker compose run --rm -it app python query.py \
+  --embedding-model /app/models/e5-large-v2 --ollama-model llama3.2
+docker compose run --rm -it app python query.py \
+  --embedding-model /app/models/e5-large-v2 \
+  --chroma-path ./chroma_db --collection knowledge_catalyst
 ```
+
+The Ollama endpoint defaults to the bundled `ollama` container (`OLLAMA_BASE_URL=http://ollama:11434/v1`); override with `--ollama-url` only if you run Ollama elsewhere.
 
 Example session:
 
@@ -185,17 +154,16 @@ Simulations detect convergence by monitoring system disturbances... [Nguyen_et_a
 
 ## Embedding Plots
 
+Bind-mount an output directory so the plots survive the throwaway container:
+
 ```bash
-python plot_embeddings.py --chroma-path ./chroma_db
+docker compose run --rm -v ./embedding_plots:/app/embedding_plots app \
+  python plot_embeddings.py --chroma-path ./chroma_db
 ```
 
 Outputs `embedding_plots/pca_embedding_plot.html` and `embedding_plots/tsne_embedding_plot.html`. Each point is one stored chunk; hover shows source, page, and a text preview.
 
-```bash
-python plot_embeddings.py --color-by page
-python plot_embeddings.py --methods tsne --perplexity 10 --tsne-metric cosine
-python plot_embeddings.py --max-points 2000
-```
+Extra options: `--color-by page`, `--methods tsne --perplexity 10 --tsne-metric cosine`, `--max-points 2000`.
 
 ---
 
@@ -203,10 +171,12 @@ python plot_embeddings.py --max-points 2000
 
 | Path | Purpose |
 |---|---|
-| `./chroma_db` | Persistent vector store (Docker: `kc_chroma` named volume) |
+| `./chroma_db` | Persistent vector store (`kc_chroma` named volume) |
 | `ingestion_checkpoints.sqlite` | LangGraph checkpoints (enables `--resume`) |
 | `ingestion_log.db` | Structured log of skipped and failed files |
-| `ollama_models` volume | Ollama model weights (Docker only) |
+| `ollama_models` volume | Ollama model weights |
+
+The two SQLite files are written to `/app` inside the container, which is discarded when a `docker compose run` container exits — to `--resume` across runs, bind-mount them (e.g. `-v ./ingestion_checkpoints.sqlite:/app/ingestion_checkpoints.sqlite`).
 
 The pipeline is idempotent — files already in ChromaDB with the same path and last-modified timestamp are skipped. Modified files are reindexed; old chunks are deleted before upserting new ones.
 
