@@ -1,0 +1,14 @@
+# NVIDIA GPU override — use on machines with an NVIDIA GPU:
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
+# Requires the NVIDIA driver on the host; Docker Desktop (Windows/WSL2) handles
+# the rest. On a machine without an NVIDIA GPU this file makes the ollama
+# service fail to start — just omit it there.
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

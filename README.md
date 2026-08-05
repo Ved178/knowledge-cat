@@ -34,6 +34,16 @@ docker compose exec ollama ollama pull llama3.2
 
 Any model you pull appears in the UI's model selector immediately. The app falls back to plain semantic search if no model is loaded yet.
 
+### GPU acceleration (NVIDIA)
+
+By default the bundled Ollama runs on CPU. On a machine with an NVIDIA GPU, start the stack with the GPU override for much faster LLM responses:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
+```
+
+Requirements: an NVIDIA GPU and its driver installed on the host — Docker Desktop on Windows (WSL2 backend) handles GPU passthrough automatically. AMD/Intel GPUs are not supported. On a machine **without** an NVIDIA GPU, don't use the override — the ollama service will fail to start; plain `docker compose up` works everywhere.
+
 ### CLI commands inside Docker
 
 ```bash
